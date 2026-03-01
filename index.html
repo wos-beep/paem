@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傭兵の名誉 管理ツール v1.8</title>
+    <title>傭兵の名誉 管理ツール v1.9</title>
     <style>
         :root {
             --bg-color: #1a1c1e;
@@ -15,138 +15,47 @@
             --danger-color: #ee5253;
             --info-color: #3498db;
             --border-color: #404245;
-            --warning-color: #f1c40f;
+            --undo-color: #9b59b6;
         }
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            margin: 0;
-            padding: 10px;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-primary); margin: 0; padding: 10px; }
+        .container { width: 100%; max-width: 1050px; margin: 0 auto; }
+        h1 { text-align: center; color: var(--accent-color); font-size: 1.5rem; margin-bottom: 20px; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { background-color: rgba(0,0,0,0.2); color: var(--accent-color); padding: 12px; font-size: 0.8rem; border-bottom: 2px solid var(--border-color); }
+        td { padding: 15px 10px; border-bottom: 1px solid var(--border-color); text-align: center; }
 
-        .container {
-            width: 100%;
-            max-width: 1050px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            text-align: center;
-            color: var(--accent-color);
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 850px;
-        }
-
-        th {
-            background-color: rgba(0,0,0,0.2);
-            color: var(--accent-color);
-            padding: 12px;
-            font-size: 0.8rem;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        td {
-            padding: 15px 10px;
-            border-bottom: 1px solid var(--border-color);
-            text-align: center;
-        }
-
-        .name-input {
-            background: transparent;
-            border: none;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-primary);
-            text-align: center;
-            width: 110px;
-            font-size: 1rem;
-            padding: 5px;
-        }
-
-        .lv-input {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            color: var(--accent-color);
-            text-align: center;
-            width: 55px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            padding: 2px;
-        }
-
-        .btn {
-            cursor: pointer;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-weight: bold;
-            transition: 0.2s;
-        }
+        .btn { cursor: pointer; border: none; border-radius: 6px; padding: 8px 12px; font-weight: bold; transition: 0.2s; }
         .btn:active { transform: scale(0.95); }
         .btn:disabled { opacity: 0.3; cursor: not-allowed; }
         
         .btn-plus { background-color: var(--success-color); color: white; }
         .btn-minus { background-color: var(--danger-color); color: white; }
-        .btn-day-reset { background-color: var(--info-color); color: white; width: 100%; margin-bottom: 10px; padding: 12px; }
+        .btn-day-reset { background-color: var(--info-color); color: white; margin-bottom: 10px; padding: 12px; }
+        .btn-undo { background-color: var(--undo-color); color: white; margin-bottom: 10px; padding: 12px; }
         .btn-add-char { background-color: var(--accent-color); color: #000; width: 100%; margin: 15px 0; font-size: 1rem; }
         .btn-reset { background-color: #576574; color: white; width: 100%; margin-top: 10px; padding: 12px; }
-        .btn-del { background-color: transparent; color: var(--danger-color); border: 1px solid var(--danger-color); padding: 4px 8px; font-size: 0.7rem; }
-
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.1);
-            font-family: monospace;
-            font-size: 1rem;
-        }
-
-        /* 警告用スタイル */
-        .alert-text {
-            color: var(--danger-color);
-            font-weight: bold;
-            text-decoration: underline;
-        }
-
-        .progress-bg {
-            background: #111;
-            border-radius: 10px;
-            height: 8px;
-            margin: 8px 0;
-            overflow: hidden;
-        }
-        .progress-fill {
-            background: linear-gradient(90deg, #ff9f43, #ff6b6b);
-            height: 100%;
-            transition: width 0.3s ease;
-        }
-
+        
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.1); font-family: monospace; font-size: 1rem; }
+        .alert-text { color: var(--danger-color); font-weight: bold; text-decoration: underline; }
+        .progress-bg { background: #111; border-radius: 10px; height: 8px; margin: 8px 0; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #ff9f43, #ff6b6b); height: 100%; transition: width 0.3s ease; }
+        .name-input { background: transparent; border: none; border-bottom: 1px solid var(--border-color); color: var(--text-primary); text-align: center; width: 100px; font-size: 1rem; }
+        .lv-input { background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 4px; color: var(--accent-color); text-align: center; width: 55px; font-size: 1.1rem; font-weight: bold; }
         .version-info { text-align: right; font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>傭兵の名誉 管理パネル <span style="font-size: 0.6em; color: #666;">v1.8</span></h1>
+    <h1>傭兵の名誉 管理パネル <span style="font-size: 0.6em; color: #666;">v1.9</span></h1>
     
     <div class="card">
-        <button class="btn btn-day-reset" onclick="resetDailyOnly()">📅 日付更新 (本日分支援のみリセット)</button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn btn-day-reset" style="flex: 2;" onclick="resetDailyOnly()">📅 日付更新 (本日分支援リセット)</button>
+            <button id="undoBtn" class="btn btn-undo" style="flex: 1;" onclick="undo()" disabled>↩ 一歩戻す (Undo)</button>
+        </div>
 
         <table>
             <thead>
@@ -154,7 +63,7 @@
                     <th>キャラクター</th>
                     <th>支援報酬<br>(本日/7)</th>
                     <th>支援依頼の状態<br>(所持 / 50まで必要数)</th>
-                    <th>追加枠<br>(累計/5)</th>
+                    <th>増加状況<br>(追加枠5回分)</th>
                     <th>討伐進捗 (Lv.1-50)</th>
                     <th>操作</th>
                 </tr>
@@ -167,13 +76,13 @@
         <button class="btn btn-reset" style="background-color: #222; border: 1px solid #444;" onclick="resetAll()">全データ初期化</button>
     </div>
     
-    <div class="version-info">Smart Request Alert | Version 1.8</div>
+    <div class="version-info">Undo & Recovery status | Version 1.9</div>
 </div>
 
 <script>
-    const CURRENT_VERSION = "1_8";
+    const CURRENT_VERSION = "1_9";
     const STORAGE_KEY = `mercenary_honor_v${CURRENT_VERSION}`;
-    const OLD_KEYS = ["mercenary_honor_v1_7", "mercenary_honor_v1_6", "mercenary_honor_v1_5"];
+    const OLD_KEYS = ["mercenary_honor_v1_8", "mercenary_honor_v1_7"];
 
     const MAX_DAILY_SUPPORT = 7;
     const DEFAULT_REQUESTS = 5;
@@ -181,18 +90,13 @@
     const MAX_LV = 50;
 
     let state = { members: [] };
+    let history = null; // Undo用のバックアップ
 
     function migrate() {
         if (localStorage.getItem(STORAGE_KEY)) return;
         for (const oldKey of OLD_KEYS) {
             const oldData = localStorage.getItem(oldKey);
-            if (oldData) {
-                try {
-                    state = JSON.parse(oldData);
-                    save();
-                    return;
-                } catch (e) { console.error(e); }
-            }
+            if (oldData) { try { state = JSON.parse(oldData); save(); return; } catch (e) { console.error(e); } }
         }
         if (state.members.length === 0) addCharacter("メインキャラ", false);
     }
@@ -203,15 +107,33 @@
         render();
     }
 
+    // 操作前に現在の状態を保存
+    function pushHistory() {
+        history = JSON.stringify(state);
+        document.getElementById('undoBtn').disabled = false;
+    }
+
+    function undo() {
+        if (history) {
+            state = JSON.parse(history);
+            history = null;
+            document.getElementById('undoBtn').disabled = true;
+            save();
+            render();
+        }
+    }
+
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
     function addCharacter(name = "新キャラ", redraw = true) {
+        if(redraw) pushHistory();
         state.members.push({ name, daily: 0, req: DEFAULT_REQUESTS, bonus: 0, lv: 1 });
         save(); if(redraw) render();
     }
 
     function removeCharacter(i) {
         if (confirm(`${state.members[i].name} を削除しますか？`)) {
+            pushHistory();
             state.members.splice(i, 1); save(); render();
         }
     }
@@ -219,6 +141,7 @@
     function doSupport(i) {
         let m = state.members[i];
         if (m.daily < MAX_DAILY_SUPPORT) {
+            pushHistory();
             m.daily++;
             if (m.bonus < MAX_BONUS) { m.req++; m.bonus++; }
             save(); render();
@@ -226,7 +149,10 @@
     }
 
     function useRequest(i) {
-        if (state.members[i].req > 0) { state.members[i].req--; save(); render(); }
+        if (state.members[i].req > 0) {
+            pushHistory();
+            state.members[i].req--; save(); render();
+        }
     }
 
     function updateLvValue(i, val) {
@@ -234,30 +160,30 @@
         if (isNaN(newLv)) newLv = 1;
         if (newLv < 1) newLv = 1;
         if (newLv > MAX_LV) newLv = MAX_LV;
-        state.members[i].lv = newLv;
-        save();
-        render();
+        if (state.members[i].lv !== newLv) {
+            pushHistory();
+            state.members[i].lv = newLv;
+            save(); render();
+        }
     }
 
-    function updateName(i, val) { state.members[i].name = val; save(); }
-
     function resetDailyOnly() {
-        if (confirm("日付を更新しますか？\n本日分の支援回数のみリセットされます。")) {
+        if (confirm("日付を更新しますか？")) {
+            pushHistory();
             state.members.forEach(m => m.daily = 0); save(); render();
         }
     }
 
     function resetProgress() {
         if (confirm("全イベント進捗をリセットしますか？")) {
+            pushHistory();
             state.members.forEach(m => { m.daily = 0; m.req = DEFAULT_REQUESTS; m.bonus = 0; m.lv = 1; });
             save(); render();
         }
     }
 
     function resetAll() {
-        if (confirm("全てのデータを初期化しますか？")) {
-            localStorage.clear(); location.reload();
-        }
+        if (confirm("全てのデータを初期化しますか？")) { localStorage.clear(); location.reload(); }
     }
 
     function render() {
@@ -265,12 +191,13 @@
         tbody.innerHTML = '';
         state.members.forEach((m, i) => {
             const prog = (m.lv / MAX_LV) * 100;
-            const remainingLv = MAX_LV - m.lv; // あと何回討伐が必要か
-            const isOverflowing = m.req > remainingLv; // 依頼数が残りLvより多いか
+            const remainingLv = MAX_LV - m.lv;
+            const isOverflowing = m.req > remainingLv;
+            const canStillRecover = MAX_BONUS - m.bonus;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="text" class="name-input" value="${m.name}" onchange="updateName(${i}, this.value)"></td>
+                <td><input type="text" class="name-input" value="${m.name}" onchange="pushHistory(); state.members[${i}].name=this.value; save();"></td>
                 <td>
                     <span class="badge" style="color:${m.daily >= 7 ? 'var(--text-secondary)' : 'var(--success-color)'}">${m.daily} / 7</span><br>
                     <button class="btn btn-plus" style="margin-top:5px;" onclick="doSupport(${i})" ${m.daily >= 7 ? 'disabled' : ''}>支援</button>
@@ -281,7 +208,12 @@
                     </div><br>
                     <button class="btn btn-minus" style="margin-top:5px;" onclick="useRequest(${i})" ${m.req === 0 ? 'disabled' : ''}>依頼消費</button>
                 </td>
-                <td><span style="font-size:0.9rem;">${m.bonus} / 5</span></td>
+                <td>
+                    <span style="font-size:0.85rem; color:${canStillRecover > 0 ? 'var(--info-color)' : 'var(--text-secondary)'}">
+                        ${canStillRecover > 0 ? 'あと ' + canStillRecover + ' 回回復可能' : '完了 (上限到達)'}
+                    </span><br>
+                    <small style="color:#666">累計獲得: ${m.bonus} / 5</small>
+                </td>
                 <td>
                     <div style="min-width:160px">
                         Lv.<input type="number" class="lv-input" value="${m.lv}" min="1" max="50" onchange="updateLvValue(${i}, this.value)">
@@ -290,7 +222,7 @@
                         <button class="btn btn-plus" onclick="updateLvValue(${i}, ${m.lv + 1})">+</button>
                     </div>
                 </td>
-                <td><button class="btn btn-del" onclick="removeCharacter(${i})">削除</button></td>
+                <td><button class="btn btn-del" style="background:none; border:1px solid var(--danger-color); color:var(--danger-color); font-size:0.7rem; padding:4px;" onclick="removeCharacter(${i})">削除</button></td>
             `;
             tbody.appendChild(tr);
         });
