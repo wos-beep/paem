@@ -3,64 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傭兵の名誉 管理ツール (修正版)</title>
+    <title>傭兵の名誉 管理ツール v1.3</title>
     <style>
-        :root { --primary: #2c3e50; --accent: #e67e22; --bg: #f4f7f6; --white: #ffffff; }
-        body { font-family: sans-serif; background-color: var(--bg); color: var(--primary); padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .card { background: var(--white); border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-        th { background-color: var(--primary); color: white; }
-        .btn { cursor: pointer; border: none; border-radius: 4px; padding: 8px 12px; font-weight: bold; }
-        .btn-plus { background-color: #27ae60; color: white; }
-        .btn-minus { background-color: #e74c3c; color: white; }
-        .btn-reset { background-color: #95a5a6; color: white; width: 100%; margin-top: 10px; }
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 0.9em; background: #eee; }
-        .limit-text { font-size: 0.8em; color: #666; margin-top: 5px; }
-        .name-input { border: none; border-bottom: 1px solid #ccc; text-align: center; width: 100px; }
+        /* ダークモードベースのデザイン */
+        :root {
+            --bg-color: #1a1c1e;
+            --card-bg: #2d2f31;
+            --text-primary: #e2e2e2;
+            --text-secondary: #a0a0a0;
+            --accent-color: #ff9f43;
+            --success-color: #2ecc71;
+            --danger-color: #ee5253;
+            --border-color: #404245;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--accent-color);
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        th {
+            background-color: rgba(0,0,0,0.2);
+            color: var(--accent-color);
+            padding: 12px;
+            font-size: 0.85rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 15px 10px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        /* 入力エリア */
+        .name-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            text-align: center;
+            width: 100px;
+            font-size: 1rem;
+            padding: 5px;
+        }
+
+        /* ボタン類 */
+        .btn {
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-weight: bold;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .btn-plus { background-color: var(--success-color); color: white; }
+        .btn-minus { background-color: var(--danger-color); color: white; }
+        .btn-reset { background-color: #576574; color: white; width: 100%; margin-top: 15px; padding: 12px; }
+
+        /* 進捗管理のパーツ */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        .lv-container {
+            width: 100%;
+            min-width: 150px;
+        }
+        .progress-bg {
+            background: #111;
+            border-radius: 10px;
+            height: 8px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #ff9f43, #ff6b6b);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .version-info {
+            text-align: right;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+
+        .help-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>傭兵の名誉 管理パネル</h1>
+    <h1>傭兵の名誉 管理パネル <span style="font-size: 0.6em; color: #666;">v1.3</span></h1>
+    
     <div class="card">
-        <p>💡 <strong>ルール:</strong> 支援で増える依頼回数は<strong>累計5回まで</strong>です（初期5＋追加5＝計10回まで）。</p>
-        <table id="trackerTable">
+        <div class="help-text">
+            ・<strong>支援:</strong> 本日分(+1)と依頼枠(+1)を増加。追加枠は累計5回まで。<br>
+            ・<strong>依頼:</strong> 支援依頼を消費(-1)。<br>
+            ・<strong>討伐Lv:</strong> パエトーン討伐進捗 (1～50)。
+        </div>
+
+        <table>
             <thead>
                 <tr>
-                    <th>キャラクター名</th>
-                    <th>支援回数<br>(本日分/7)</th>
+                    <th>キャラクター</th>
+                    <th>支援報酬<br>(本日/7)</th>
                     <th>支援依頼<br>(残り)</th>
-                    <th>獲得済みの追加枠<br>(最大5)</th>
+                    <th>追加枠<br>(累計/5)</th>
+                    <th>討伐進捗 (Lv.1-50)</th>
                 </tr>
             </thead>
-            <tbody id="memberList"></tbody>
+            <tbody id="listBody"></tbody>
         </table>
+
         <button class="btn btn-reset" onclick="resetProgress()">新イベント開始 (進捗リセット)</button>
-        <button class="btn btn-reset" style="background-color: #34495e;" onclick="resetAll()">全データ消去</button>
+        <button class="btn btn-reset" style="background-color: #222; border: 1px solid #444;" onclick="resetAll()">全データ初期化</button>
     </div>
+    
+    <div class="version-info">Dark Mode Edition | Version 1.3</div>
 </div>
 
 <script>
+    const STORAGE_KEY = "mercenary_honor_v1_3";
     const MAX_DAILY_SUPPORT = 7;
     const DEFAULT_REQUESTS = 5;
-    const MAX_BONUS_REQUESTS = 5; // 支援で増やせる最大数
+    const MAX_BONUS = 5;
+    const MAX_LV = 50;
 
     let state = { members: [] };
 
     function init() {
-        const saved = localStorage.getItem('mercenary_honor_v2');
+        const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             state = JSON.parse(saved);
         } else {
             for (let i = 1; i <= 5; i++) {
                 state.members.push({
                     name: `キャラ${i}`,
-                    dailySupport: 0,
-                    requests: DEFAULT_REQUESTS,
-                    bonusEarned: 0 // 今まで支援で何回依頼を増やしたか
+                    daily: 0,
+                    req: DEFAULT_REQUESTS,
+                    bonus: 0,
+                    lv: 1
                 });
             }
             save();
@@ -68,75 +199,82 @@
         render();
     }
 
-    function save() { localStorage.setItem('mercenary_honor_v2', JSON.stringify(state)); }
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-    // 支援ボタン
-    function addSupport(idx) {
-        let m = state.members[idx];
-        if (m.dailySupport < MAX_DAILY_SUPPORT) {
-            m.dailySupport++;
-            
-            // 重要：追加枠がまだ5回未満なら、依頼回数を1増やす
-            if (m.bonusEarned < MAX_BONUS_REQUESTS) {
-                m.requests++;
-                m.bonusEarned++;
+    function doSupport(i) {
+        let m = state.members[i];
+        if (m.daily < MAX_DAILY_SUPPORT) {
+            m.daily++;
+            if (m.bonus < MAX_BONUS) {
+                m.req++;
+                m.bonus++;
             }
-            save();
-            render();
+            save(); render();
         }
     }
 
-    // 依頼ボタン
-    function useRequest(idx) {
-        if (state.members[idx].requests > 0) {
-            state.members[idx].requests--;
-            save();
-            render();
+    function useRequest(i) {
+        if (state.members[i].req > 0) {
+            state.members[i].req--;
+            save(); render();
         }
     }
 
-    function updateName(idx, newName) {
-        state.members[idx].name = newName;
+    function changeLv(i, val) {
+        let newLv = state.members[i].lv + val;
+        if (newLv >= 1 && newLv <= MAX_LV) {
+            state.members[i].lv = newLv;
+            save(); render();
+        }
+    }
+
+    function updateName(i, val) {
+        state.members[i].name = val;
         save();
     }
 
     function resetProgress() {
-        if (confirm("新イベント用に進捗をリセットしますか？キャラ名は維持されます。")) {
+        if (confirm("イベント進捗をリセットしますか？キャラ名は残ります。")) {
             state.members.forEach(m => {
-                m.dailySupport = 0;
-                m.requests = DEFAULT_REQUESTS;
-                m.bonusEarned = 0;
+                m.daily = 0; m.req = DEFAULT_REQUESTS; m.bonus = 0; m.lv = 1;
             });
-            save();
-            render();
+            save(); render();
         }
     }
 
     function resetAll() {
-        if (confirm("全てのデータを初期化しますか？")) {
-            localStorage.removeItem('mercenary_honor_v2');
+        if (confirm("全データを削除しますか？")) {
+            localStorage.removeItem(STORAGE_KEY);
             location.reload();
         }
     }
 
     function render() {
-        const tbody = document.getElementById('memberList');
+        const tbody = document.getElementById('listBody');
         tbody.innerHTML = '';
-        state.members.forEach((m, idx) => {
+        state.members.forEach((m, i) => {
+            const prog = (m.lv / MAX_LV) * 100;
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="text" class="name-input" value="${m.name}" onchange="updateName(${idx}, this.value)"></td>
+                <td><input type="text" class="name-input" value="${m.name}" onchange="updateName(${i}, this.value)"></td>
                 <td>
-                    <span class="status-badge">${m.dailySupport} / 7</span><br>
-                    <button class="btn btn-plus" onclick="addSupport(${idx})" ${m.dailySupport >= MAX_DAILY_SUPPORT ? 'disabled' : ''}>支援 (+1)</button>
+                    <span class="badge">${m.daily} / 7</span><br>
+                    <button class="btn btn-plus" style="margin-top:5px;" onclick="doSupport(${i})" ${m.daily >= 7 ? 'disabled' : ''}>支援</button>
                 </td>
                 <td>
-                    <span style="font-size: 1.5em; font-weight: bold;">${m.requests}</span> 回<br>
-                    <button class="btn btn-minus" onclick="useRequest(${idx})" ${m.requests === 0 ? 'disabled' : ''}>依頼 (-1)</button>
+                    <span class="badge" style="color:var(--accent-color)">${m.req}</span><br>
+                    <button class="btn btn-minus" style="margin-top:5px;" onclick="useRequest(${i})" ${m.req === 0 ? 'disabled' : ''}>依頼</button>
                 </td>
                 <td>
-                    <span class="status-badge">${m.bonusEarned} / 5</span>
-                    <div class="limit-text">${m.bonusEarned >= 5 ? '追加枠終了' : '支援で回復可能'}</div>
+                    <span style="font-size:0.9rem; color:${m.bonus >= 5 ? 'var(--text-secondary)' : 'var(--success-color)'}">${m.bonus} / 5</span>
+                </td>
+                <td>
+                    <div class="lv-container">
+                        <span style="font-weight:bold; color:var(--accent-color)">Lv.${m.lv}</span>
+                        <div class="progress-bg"><div class="progress-fill" style="width:${prog}%"></div></div>
+                        <button class="btn btn-minus" onclick="changeLv(${i}, -1)">-</button>
+                        <button class="btn btn-plus" onclick="changeLv(${i}, 1)">+</button>
+                    </div>
                 </td>
             `;
             tbody.appendChild(tr);
