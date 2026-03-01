@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傭兵の名誉 管理ツール v1.7</title>
+    <title>傭兵の名誉 管理ツール v1.8</title>
     <style>
         :root {
             --bg-color: #1a1c1e;
@@ -15,6 +15,7 @@
             --danger-color: #ee5253;
             --info-color: #3498db;
             --border-color: #404245;
+            --warning-color: #f1c40f;
         }
 
         body {
@@ -27,7 +28,7 @@
 
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1050px;
             margin: 0 auto;
         }
 
@@ -49,7 +50,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 800px;
+            min-width: 850px;
         }
 
         th {
@@ -77,14 +78,13 @@
             padding: 5px;
         }
 
-        /* レベル入力用 */
         .lv-input {
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--border-color);
             border-radius: 4px;
             color: var(--accent-color);
             text-align: center;
-            width: 50px;
+            width: 55px;
             font-size: 1.1rem;
             font-weight: bold;
             padding: 2px;
@@ -114,7 +114,14 @@
             border-radius: 4px;
             background: rgba(255,255,255,0.1);
             font-family: monospace;
-            font-size: 1.1rem;
+            font-size: 1rem;
+        }
+
+        /* 警告用スタイル */
+        .alert-text {
+            color: var(--danger-color);
+            font-weight: bold;
+            text-decoration: underline;
         }
 
         .progress-bg {
@@ -131,14 +138,12 @@
         }
 
         .version-info { text-align: right; font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px; }
-        .migration-notice { background: var(--success-color); color: white; padding: 5px; text-align: center; border-radius: 4px; margin-bottom: 10px; font-size: 0.8rem; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="migrationNotice" class="migration-notice">旧バージョンからのデータ移行が完了しました！</div>
-    <h1>傭兵の名誉 管理パネル <span style="font-size: 0.6em; color: #666;">v1.7</span></h1>
+    <h1>傭兵の名誉 管理パネル <span style="font-size: 0.6em; color: #666;">v1.8</span></h1>
     
     <div class="card">
         <button class="btn btn-day-reset" onclick="resetDailyOnly()">📅 日付更新 (本日分支援のみリセット)</button>
@@ -148,7 +153,7 @@
                 <tr>
                     <th>キャラクター</th>
                     <th>支援報酬<br>(本日/7)</th>
-                    <th>支援依頼<br>(残り)</th>
+                    <th>支援依頼の状態<br>(所持 / 50まで必要数)</th>
                     <th>追加枠<br>(累計/5)</th>
                     <th>討伐進捗 (Lv.1-50)</th>
                     <th>操作</th>
@@ -162,18 +167,13 @@
         <button class="btn btn-reset" style="background-color: #222; border: 1px solid #444;" onclick="resetAll()">全データ初期化</button>
     </div>
     
-    <div class="version-info">Direct Input Support | Version 1.7</div>
+    <div class="version-info">Smart Request Alert | Version 1.8</div>
 </div>
 
 <script>
-    const CURRENT_VERSION = "1_7";
+    const CURRENT_VERSION = "1_8";
     const STORAGE_KEY = `mercenary_honor_v${CURRENT_VERSION}`;
-    const OLD_KEYS = [
-        "mercenary_honor_v1_6",
-        "mercenary_honor_v1_5",
-        "mercenary_honor_v1_4",
-        "mercenary_honor_data_v1.2"
-    ];
+    const OLD_KEYS = ["mercenary_honor_v1_7", "mercenary_honor_v1_6", "mercenary_honor_v1_5"];
 
     const MAX_DAILY_SUPPORT = 7;
     const DEFAULT_REQUESTS = 5;
@@ -188,17 +188,8 @@
             const oldData = localStorage.getItem(oldKey);
             if (oldData) {
                 try {
-                    const parsed = JSON.parse(oldData);
-                    state.members = parsed.members.map(m => ({
-                        name: m.name || "不明",
-                        daily: m.daily || 0,
-                        req: m.req !== undefined ? m.req : DEFAULT_REQUESTS,
-                        bonus: m.bonus !== undefined ? m.bonus : 0,
-                        lv: m.lv || 1
-                    }));
+                    state = JSON.parse(oldData);
                     save();
-                    document.getElementById('migrationNotice').style.display = 'block';
-                    setTimeout(() => { document.getElementById('migrationNotice').style.display = 'none'; }, 3000);
                     return;
                 } catch (e) { console.error(e); }
             }
@@ -238,12 +229,6 @@
         if (state.members[i].req > 0) { state.members[i].req--; save(); render(); }
     }
 
-    function changeLv(i, val) {
-        let newLv = state.members[i].lv + val;
-        updateLvValue(i, newLv);
-    }
-
-    // ★数値入力を処理する関数
     function updateLvValue(i, val) {
         let newLv = parseInt(val);
         if (isNaN(newLv)) newLv = 1;
@@ -280,6 +265,9 @@
         tbody.innerHTML = '';
         state.members.forEach((m, i) => {
             const prog = (m.lv / MAX_LV) * 100;
+            const remainingLv = MAX_LV - m.lv; // あと何回討伐が必要か
+            const isOverflowing = m.req > remainingLv; // 依頼数が残りLvより多いか
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><input type="text" class="name-input" value="${m.name}" onchange="updateName(${i}, this.value)"></td>
@@ -288,16 +276,18 @@
                     <button class="btn btn-plus" style="margin-top:5px;" onclick="doSupport(${i})" ${m.daily >= 7 ? 'disabled' : ''}>支援</button>
                 </td>
                 <td>
-                    <span class="badge" style="color:var(--accent-color)">${m.req}</span><br>
-                    <button class="btn btn-minus" style="margin-top:5px;" onclick="useRequest(${i})" ${m.req === 0 ? 'disabled' : ''}>依頼</button>
+                    <div class="badge ${isOverflowing ? 'alert-text' : ''}" style="min-width:120px">
+                        ${isOverflowing ? '⚠️ ' : ''}依頼: ${m.req} / 残: ${remainingLv}
+                    </div><br>
+                    <button class="btn btn-minus" style="margin-top:5px;" onclick="useRequest(${i})" ${m.req === 0 ? 'disabled' : ''}>依頼消費</button>
                 </td>
                 <td><span style="font-size:0.9rem;">${m.bonus} / 5</span></td>
                 <td>
                     <div style="min-width:160px">
                         Lv.<input type="number" class="lv-input" value="${m.lv}" min="1" max="50" onchange="updateLvValue(${i}, this.value)">
                         <div class="progress-bg"><div class="progress-fill" style="width:${prog}%"></div></div>
-                        <button class="btn btn-minus" onclick="changeLv(${i}, -1)">-</button>
-                        <button class="btn btn-plus" onclick="changeLv(${i}, 1)">+</button>
+                        <button class="btn btn-minus" onclick="updateLvValue(${i}, ${m.lv - 1})">-</button>
+                        <button class="btn btn-plus" onclick="updateLvValue(${i}, ${m.lv + 1})">+</button>
                     </div>
                 </td>
                 <td><button class="btn btn-del" onclick="removeCharacter(${i})">削除</button></td>
