@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傭兵の名誉 管理ツール v1.5</title>
+    <title>傭兵の名誉 管理ツール v1.7</title>
     <style>
         :root {
             --bg-color: #1a1c1e;
@@ -77,6 +77,19 @@
             padding: 5px;
         }
 
+        /* レベル入力用 */
+        .lv-input {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--accent-color);
+            text-align: center;
+            width: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 2px;
+        }
+
         .btn {
             cursor: pointer;
             border: none;
@@ -118,15 +131,17 @@
         }
 
         .version-info { text-align: right; font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px; }
+        .migration-notice { background: var(--success-color); color: white; padding: 5px; text-align: center; border-radius: 4px; margin-bottom: 10px; font-size: 0.8rem; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>傭兵の名誉 管理パネル <span style="font-size: 0.6em; color: #666;">v1.5</span></h1>
+    <div id="migrationNotice" class="migration-notice">旧バージョンからのデータ移行が完了しました！</div>
+    <h1>傭兵の名誉 管理パネル <span style="font-size: 0.6em; color: #666;">v1.7</span></h1>
     
     <div class="card">
-        <button class="btn btn-day-reset" onclick="resetDailyOnly()">📅 日付更新 (全キャラの本日分支援数を0にリセット)</button>
+        <button class="btn btn-day-reset" onclick="resetDailyOnly()">📅 日付更新 (本日分支援のみリセット)</button>
 
         <table>
             <thead>
@@ -143,15 +158,23 @@
         </table>
 
         <button class="btn btn-add-char" onclick="addCharacter()">＋ 新しいキャラクターを追加</button>
-        <button class="btn btn-reset" onclick="resetProgress()">新イベント開始 (全進捗を完全リセット)</button>
-        <button class="btn btn-reset" style="background-color: #222; border: 1px solid #444;" onclick="resetAll()">全データ初期化 (キャラ名も消去)</button>
+        <button class="btn btn-reset" onclick="resetProgress()">新イベント開始 (全進捗リセット)</button>
+        <button class="btn btn-reset" style="background-color: #222; border: 1px solid #444;" onclick="resetAll()">全データ初期化</button>
     </div>
     
-    <div class="version-info">Dark Mode & Daily Reset | Version 1.5</div>
+    <div class="version-info">Direct Input Support | Version 1.7</div>
 </div>
 
 <script>
-    const STORAGE_KEY = "mercenary_honor_v1_5";
+    const CURRENT_VERSION = "1_7";
+    const STORAGE_KEY = `mercenary_honor_v${CURRENT_VERSION}`;
+    const OLD_KEYS = [
+        "mercenary_honor_v1_6",
+        "mercenary_honor_v1_5",
+        "mercenary_honor_v1_4",
+        "mercenary_honor_data_v1.2"
+    ];
+
     const MAX_DAILY_SUPPORT = 7;
     const DEFAULT_REQUESTS = 5;
     const MAX_BONUS = 5;
@@ -159,34 +182,46 @@
 
     let state = { members: [] };
 
+    function migrate() {
+        if (localStorage.getItem(STORAGE_KEY)) return;
+        for (const oldKey of OLD_KEYS) {
+            const oldData = localStorage.getItem(oldKey);
+            if (oldData) {
+                try {
+                    const parsed = JSON.parse(oldData);
+                    state.members = parsed.members.map(m => ({
+                        name: m.name || "不明",
+                        daily: m.daily || 0,
+                        req: m.req !== undefined ? m.req : DEFAULT_REQUESTS,
+                        bonus: m.bonus !== undefined ? m.bonus : 0,
+                        lv: m.lv || 1
+                    }));
+                    save();
+                    document.getElementById('migrationNotice').style.display = 'block';
+                    setTimeout(() => { document.getElementById('migrationNotice').style.display = 'none'; }, 3000);
+                    return;
+                } catch (e) { console.error(e); }
+            }
+        }
+        if (state.members.length === 0) addCharacter("メインキャラ", false);
+    }
+
     function init() {
         const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-            state = JSON.parse(saved);
-        } else {
-            addCharacter("メインキャラ", false);
-        }
+        if (saved) { state = JSON.parse(saved); } else { migrate(); }
         render();
     }
 
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-    function addCharacter(defaultName = "新キャラ", shouldRender = true) {
-        state.members.push({
-            name: defaultName,
-            daily: 0,
-            req: DEFAULT_REQUESTS,
-            bonus: 0,
-            lv: 1
-        });
-        save();
-        if(shouldRender) render();
+    function addCharacter(name = "新キャラ", redraw = true) {
+        state.members.push({ name, daily: 0, req: DEFAULT_REQUESTS, bonus: 0, lv: 1 });
+        save(); if(redraw) render();
     }
 
     function removeCharacter(i) {
         if (confirm(`${state.members[i].name} を削除しますか？`)) {
-            state.members.splice(i, 1);
-            save(); render();
+            state.members.splice(i, 1); save(); render();
         }
     }
 
@@ -194,57 +229,49 @@
         let m = state.members[i];
         if (m.daily < MAX_DAILY_SUPPORT) {
             m.daily++;
-            if (m.bonus < MAX_BONUS) {
-                m.req++;
-                m.bonus++;
-            }
+            if (m.bonus < MAX_BONUS) { m.req++; m.bonus++; }
             save(); render();
         }
     }
 
     function useRequest(i) {
-        if (state.members[i].req > 0) {
-            state.members[i].req--;
-            save(); render();
-        }
+        if (state.members[i].req > 0) { state.members[i].req--; save(); render(); }
     }
 
     function changeLv(i, val) {
         let newLv = state.members[i].lv + val;
-        if (newLv >= 1 && newLv <= MAX_LV) {
-            state.members[i].lv = newLv;
-            save(); render();
-        }
+        updateLvValue(i, newLv);
     }
 
-    function updateName(i, val) {
-        state.members[i].name = val;
+    // ★数値入力を処理する関数
+    function updateLvValue(i, val) {
+        let newLv = parseInt(val);
+        if (isNaN(newLv)) newLv = 1;
+        if (newLv < 1) newLv = 1;
+        if (newLv > MAX_LV) newLv = MAX_LV;
+        state.members[i].lv = newLv;
         save();
+        render();
     }
 
-    // ★今回の目玉：本日分の支援回数だけをリセット
+    function updateName(i, val) { state.members[i].name = val; save(); }
+
     function resetDailyOnly() {
-        if (confirm("日付を更新しますか？\n全キャラの「本日分の支援回数」が0になります。\n(※獲得した依頼枠や討伐Lvはそのまま維持されます)")) {
-            state.members.forEach(m => {
-                m.daily = 0;
-            });
-            save(); render();
+        if (confirm("日付を更新しますか？\n本日分の支援回数のみリセットされます。")) {
+            state.members.forEach(m => m.daily = 0); save(); render();
         }
     }
 
     function resetProgress() {
-        if (confirm("全キャラの全イベント進捗をリセットしますか？\n(依頼枠や討伐Lvも初期状態に戻ります)")) {
-            state.members.forEach(m => {
-                m.daily = 0; m.req = DEFAULT_REQUESTS; m.bonus = 0; m.lv = 1;
-            });
+        if (confirm("全イベント進捗をリセットしますか？")) {
+            state.members.forEach(m => { m.daily = 0; m.req = DEFAULT_REQUESTS; m.bonus = 0; m.lv = 1; });
             save(); render();
         }
     }
 
     function resetAll() {
-        if (confirm("登録キャラ名を含む全てのデータを完全に初期化しますか？")) {
-            localStorage.removeItem(STORAGE_KEY);
-            location.reload();
+        if (confirm("全てのデータを初期化しますか？")) {
+            localStorage.clear(); location.reload();
         }
     }
 
@@ -258,27 +285,22 @@
                 <td><input type="text" class="name-input" value="${m.name}" onchange="updateName(${i}, this.value)"></td>
                 <td>
                     <span class="badge" style="color:${m.daily >= 7 ? 'var(--text-secondary)' : 'var(--success-color)'}">${m.daily} / 7</span><br>
-                    <button class="btn btn-plus" style="margin-top:5px;" onclick="doSupport(${i})" ${m.daily >= 7 ? 'disabled' : ''}>支援実行</button>
+                    <button class="btn btn-plus" style="margin-top:5px;" onclick="doSupport(${i})" ${m.daily >= 7 ? 'disabled' : ''}>支援</button>
                 </td>
                 <td>
                     <span class="badge" style="color:var(--accent-color)">${m.req}</span><br>
-                    <button class="btn btn-minus" style="margin-top:5px;" onclick="useRequest(${i})" ${m.req === 0 ? 'disabled' : ''}>依頼消費</button>
+                    <button class="btn btn-minus" style="margin-top:5px;" onclick="useRequest(${i})" ${m.req === 0 ? 'disabled' : ''}>依頼</button>
                 </td>
+                <td><span style="font-size:0.9rem;">${m.bonus} / 5</span></td>
                 <td>
-                    <span style="font-size:0.9rem; color:${m.bonus >= 5 ? 'var(--text-secondary)' : 'var(--info-color)'}">${m.bonus} / 5</span>
-                    <div style="font-size:0.6rem; color:#888;">累計獲得数</div>
-                </td>
-                <td>
-                    <div style="min-width:140px">
-                        <span style="font-weight:bold; color:var(--accent-color)">Lv.${m.lv}</span>
+                    <div style="min-width:160px">
+                        Lv.<input type="number" class="lv-input" value="${m.lv}" min="1" max="50" onchange="updateLvValue(${i}, this.value)">
                         <div class="progress-bg"><div class="progress-fill" style="width:${prog}%"></div></div>
                         <button class="btn btn-minus" onclick="changeLv(${i}, -1)">-</button>
                         <button class="btn btn-plus" onclick="changeLv(${i}, 1)">+</button>
                     </div>
                 </td>
-                <td>
-                    <button class="btn btn-del" onclick="removeCharacter(${i})">削除</button>
-                </td>
+                <td><button class="btn btn-del" onclick="removeCharacter(${i})">削除</button></td>
             `;
             tbody.appendChild(tr);
         });
