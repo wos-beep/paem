@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>傭兵の名誉 管理ツール v1.3</title>
+    <title>傭兵の名誉 管理ツール v1.4</title>
     <style>
-        /* ダークモードベースのデザイン */
         :root {
             --bg-color: #1a1c1e;
             --card-bg: #2d2f31;
@@ -18,18 +17,17 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
             margin: 0;
             padding: 10px;
-            display: flex;
-            justify-content: center;
         }
 
         .container {
             width: 100%;
             max-width: 1000px;
+            margin: 0 auto;
         }
 
         h1 {
@@ -37,7 +35,6 @@
             color: var(--accent-color);
             font-size: 1.5rem;
             margin-bottom: 20px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .card {
@@ -51,14 +48,14 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 700px;
+            min-width: 800px;
         }
 
         th {
             background-color: rgba(0,0,0,0.2);
             color: var(--accent-color);
             padding: 12px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             border-bottom: 2px solid var(--border-color);
         }
 
@@ -68,35 +65,34 @@
             text-align: center;
         }
 
-        /* 入力エリア */
         .name-input {
             background: transparent;
             border: none;
             border-bottom: 1px solid var(--border-color);
             color: var(--text-primary);
             text-align: center;
-            width: 100px;
+            width: 110px;
             font-size: 1rem;
             padding: 5px;
         }
 
-        /* ボタン類 */
         .btn {
             cursor: pointer;
             border: none;
             border-radius: 6px;
             padding: 8px 12px;
             font-weight: bold;
-            transition: transform 0.1s, opacity 0.2s;
+            transition: 0.2s;
         }
         .btn:active { transform: scale(0.95); }
         .btn:disabled { opacity: 0.3; cursor: not-allowed; }
         
         .btn-plus { background-color: var(--success-color); color: white; }
         .btn-minus { background-color: var(--danger-color); color: white; }
-        .btn-reset { background-color: #576574; color: white; width: 100%; margin-top: 15px; padding: 12px; }
+        .btn-add-char { background-color: var(--accent-color); color: #000; width: 100%; margin: 15px 0; font-size: 1rem; }
+        .btn-reset { background-color: #576574; color: white; width: 100%; margin-top: 10px; padding: 12px; }
+        .btn-del { background-color: transparent; color: var(--danger-color); border: 1px solid var(--danger-color); padding: 4px 8px; font-size: 0.7rem; }
 
-        /* 進捗管理のパーツ */
         .badge {
             display: inline-block;
             padding: 2px 8px;
@@ -106,10 +102,6 @@
             font-size: 1.1rem;
         }
 
-        .lv-container {
-            width: 100%;
-            min-width: 150px;
-        }
         .progress-bg {
             background: #111;
             border-radius: 10px;
@@ -120,37 +112,18 @@
         .progress-fill {
             background: linear-gradient(90deg, #ff9f43, #ff6b6b);
             height: 100%;
-            width: 0%;
             transition: width 0.3s ease;
         }
 
-        .version-info {
-            text-align: right;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            margin-top: 10px;
-        }
-
-        .help-text {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
+        .version-info { text-align: right; font-size: 0.7rem; color: var(--text-secondary); margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>傭兵の名誉 管理パネル <span style="font-size: 0.6em; color: #666;">v1.3</span></h1>
+    <h1>傭兵の名誉 管理パネル <span style="font-size: 0.6em; color: #666;">v1.4</span></h1>
     
     <div class="card">
-        <div class="help-text">
-            ・<strong>支援:</strong> 本日分(+1)と依頼枠(+1)を増加。追加枠は累計5回まで。<br>
-            ・<strong>依頼:</strong> 支援依頼を消費(-1)。<br>
-            ・<strong>討伐Lv:</strong> パエトーン討伐進捗 (1～50)。
-        </div>
-
         <table>
             <thead>
                 <tr>
@@ -159,20 +132,22 @@
                     <th>支援依頼<br>(残り)</th>
                     <th>追加枠<br>(累計/5)</th>
                     <th>討伐進捗 (Lv.1-50)</th>
+                    <th>操作</th>
                 </tr>
             </thead>
             <tbody id="listBody"></tbody>
         </table>
 
+        <button class="btn btn-add-char" onclick="addCharacter()">＋ 新しいキャラクターを追加</button>
         <button class="btn btn-reset" onclick="resetProgress()">新イベント開始 (進捗リセット)</button>
         <button class="btn btn-reset" style="background-color: #222; border: 1px solid #444;" onclick="resetAll()">全データ初期化</button>
     </div>
     
-    <div class="version-info">Dark Mode Edition | Version 1.3</div>
+    <div class="version-info">Dark Mode & Flexible Char List | Version 1.4</div>
 </div>
 
 <script>
-    const STORAGE_KEY = "mercenary_honor_v1_3";
+    const STORAGE_KEY = "mercenary_honor_v1_4";
     const MAX_DAILY_SUPPORT = 7;
     const DEFAULT_REQUESTS = 5;
     const MAX_BONUS = 5;
@@ -185,21 +160,32 @@
         if (saved) {
             state = JSON.parse(saved);
         } else {
-            for (let i = 1; i <= 5; i++) {
-                state.members.push({
-                    name: `キャラ${i}`,
-                    daily: 0,
-                    req: DEFAULT_REQUESTS,
-                    bonus: 0,
-                    lv: 1
-                });
-            }
-            save();
+            // 初回は1人だけ登録
+            addCharacter("メインキャラ", false);
         }
         render();
     }
 
     function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+    function addCharacter(defaultName = "新キャラ", shouldRender = true) {
+        state.members.push({
+            name: defaultName,
+            daily: 0,
+            req: DEFAULT_REQUESTS,
+            bonus: 0,
+            lv: 1
+        });
+        save();
+        if(shouldRender) render();
+    }
+
+    function removeCharacter(i) {
+        if (confirm(`${state.members[i].name} を削除しますか？`)) {
+            state.members.splice(i, 1);
+            save(); render();
+        }
+    }
 
     function doSupport(i) {
         let m = state.members[i];
@@ -234,7 +220,7 @@
     }
 
     function resetProgress() {
-        if (confirm("イベント進捗をリセットしますか？キャラ名は残ります。")) {
+        if (confirm("全キャラのイベント進捗をリセットしますか？")) {
             state.members.forEach(m => {
                 m.daily = 0; m.req = DEFAULT_REQUESTS; m.bonus = 0; m.lv = 1;
             });
@@ -243,7 +229,7 @@
     }
 
     function resetAll() {
-        if (confirm("全データを削除しますか？")) {
+        if (confirm("登録キャラ名を含む全てのデータを初期化しますか？")) {
             localStorage.removeItem(STORAGE_KEY);
             location.reload();
         }
@@ -269,12 +255,15 @@
                     <span style="font-size:0.9rem; color:${m.bonus >= 5 ? 'var(--text-secondary)' : 'var(--success-color)'}">${m.bonus} / 5</span>
                 </td>
                 <td>
-                    <div class="lv-container">
+                    <div style="min-width:140px">
                         <span style="font-weight:bold; color:var(--accent-color)">Lv.${m.lv}</span>
                         <div class="progress-bg"><div class="progress-fill" style="width:${prog}%"></div></div>
                         <button class="btn btn-minus" onclick="changeLv(${i}, -1)">-</button>
                         <button class="btn btn-plus" onclick="changeLv(${i}, 1)">+</button>
                     </div>
+                </td>
+                <td>
+                    <button class="btn btn-del" onclick="removeCharacter(${i})">削除</button>
                 </td>
             `;
             tbody.appendChild(tr);
